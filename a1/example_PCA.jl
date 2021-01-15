@@ -5,20 +5,22 @@ dataTable = readdlm("animals.csv",',')
 X = float(real(dataTable[2:end,2:end]))
 (n,d) = size(X)
 
-# Plot matrix as image
-using PyPlot
-figure(1)
-clf()
-imshow(X)
+include("PCA.jl")
+# model = PCA(X,2)
+# Z = model.compress(X)
+V = cov(X)
+values, vectors = eigen(V)
+explained_variance = values ./ sum(values)
+show(findmax(explained_variance))
 
-# Show scatterplot of 2 random features
-j1 = rand(1:d)
-j2 = rand(1:d)
+# Show scatterplot of 2 features
 figure(2)
 clf()
-plot(X[:,j1],X[:,j2],".")
-for i in rand(1:n,10)
+plot(Z,".")
+for i in rand(1:n,20)
     annotate(dataTable[i+1,1],
-	xy=[X[i,j1],X[i,j2]],
+	xy=[Z[i,1],Z[i,2]],
 	xycoords="data")
 end
+gcf()
+savefig("scatterplot.png")

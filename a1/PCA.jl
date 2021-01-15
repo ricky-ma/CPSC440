@@ -12,7 +12,7 @@ function PCA(X,k)
     (U,S,V) = svd(X)
     W = V[:,1:k]'
 
-    compress(Xhat) = compressFunc(Xhat,W,mu)
+    compress(Xhat) = compressFunc(Xhat,W,mu)    
     expand(Z) = expandFunc(Z,W,mu)
 
     return CompressModel(compress,expand,W)

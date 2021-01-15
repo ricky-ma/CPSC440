@@ -8,7 +8,8 @@ data = load("nonLinear.jld")
 
 # Fit least squares model
 include("leastSquares.jl")
-model = leastSquares(X,y)
+# model = leastSquares(X,y)
+model = leastSquaresRBFL2(X,y,1,1)
 
 # Report the error on the test set
 using Printf
@@ -27,3 +28,4 @@ Xhat = reshape(Xhat,length(Xhat),1) # Make into an n by 1 matrix
 yhat = model.predict(Xhat)
 plot(Xhat[:],yhat,"r")
 ylim((-300,400))
+gcf()
