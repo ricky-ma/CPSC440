@@ -1,4 +1,5 @@
 include("misc.jl")
+using LinearAlgebra
 
 function leastSquares(X,y)
 	# Add bias column
@@ -15,26 +16,23 @@ function leastSquares(X,y)
 	return LinearModel(predict,w)
 end
 
-function rbfBasis(X,sigma)
+function rbfBasis(Xtilde,X,sigma)
 	# Add bias column
+	ntilde = size(Xtilde,1)
+	Ztilde = [ones(ntilde,1) Xtilde]
 	n = size(X,1)
 	Z = [ones(n,1) X]
 	# Calculate kernal using Gaussian radial basis function
-	distances_squared = distancesSquared(Z, Z)
-	K = exp.(-distances_squared./(2*sigma*sigma))
+	K = exp.(-distancesSquared(Ztilde, Z)./(2*sigma*sigma))
 	return K
 end
 
 function leastSquaresRBFL2(X,y,lambda,sigma)
-	# Find regression weights
-	K = rbfBasis(X,y,sigma)
-	w = (K'*K)\(K'*y)
-
-	# Make linear prediction function and add L2 regularization
-	regularization = lambda*sum(w.^2)/2
-	# predict(Xtilde) = [ones(size(Xtilde,1),1) Xtilde]*w + regularization
-	predict(Xtilde) = [ones(size(Xtilde,1),1) Xtilde]*w .+ regularization
-
+	# Find regression weights w/ L2 regularization
+	K = rbfBasis(X,sigma)
+	w = (K'*K + lambda*I)\(K'*y)
+	# Make linear prediction function
+	predict(Xtilde) = rbfBasis(Xtilde,X,sigma)*w
 	# Return model
 	return LinearModel(predict,w)
 end
