@@ -1,25 +1,23 @@
+include("findMin.jl")
 
 function softmaxObj(w,X,y,k)
 	# Calculate the function value
 	(n,d) = size(X)
-    w = zeros(k*d)
-	w = reshape(w, (k,d))
+	W = reshape(w,k,d)
+	# Calculate the function value
 	f = 0
 	for i in 1:n
-		f += dot(-w[y[i]],X[i]) + log(sum(exp.(w*X[i]')))
+		f += (-X*W')[i,y[i]] + log(sum(exp.(X*W'), dims=2)[i])
 	end
 	# Calculate the gradient value
-	g = zeros((k,d))
-	for c in 1:k
-		for j in 1:d
-			for i in 1:n
-				p = exp.(dot(w[c],X[i])) / sum(exp.(w*X[i]'))
-				I = y[i] == c
-				g[c][j] += X[i][j] * (p-I)
-			end
+	g = zeros(k,d)
+	for i in 1:n
+		p = exp.((X*W')[i,:]) ./ sum(exp.(X*W'),dims=2)[i]
+		for c in 1:k
+			g[c,:] += X[i,:]*(p[c] - (y[i]==c))
 		end
 	end
-	g = Iterators.flatten(g)
+	g = reshape(g,k*d,1) # flatten
 	return (f,g)
 end
 
@@ -27,22 +25,11 @@ end
 function softmaxClassifier(X,y)
 	(n,d) = size(X)
 	k = maximum(y)
-
 	# Each column of 'w' will be a logistic regression classifier
-	W = zeros(d,k)
-
-	for c in 1:k
-		yc = ones(n,1) # Treat class 'c' as +1
-		yc[y .!= c] .= -1 # Treat other classes as -1
-
-		# Each binary objective has the same features but different lables
-		funObj(w) = softmaxObj(w,X,y,k)
-
-		W[:,c] = findMin(funObj,W[:,c],verbose=false)
-	end
-
+	W = zeros(k,d)
+	funObj(w) = softmaxObj(w,X,y,k)
+	W[:] = findMin(funObj,W[:],derivativeCheck=true,maxIter=100)
 	# Make linear prediction function
-	predict(Xhat) = mapslices(argmax,Xhat*W,dims=2)
-
+	predict(Xhat) = mapslices(argmax,Xhat*W',dims=2)
 	return LinearModel(predict,W)
 end
