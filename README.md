@@ -14,3 +14,11 @@ This course is intended as a second or third university-level course on machine 
 - Machine learning model memory and time complexities
 - Gradients and hessians in matrix notation
 - Proving norm inequalities
+
+### A2
+- Convexity
+- MLE and MAP estimation for general discrete distribution
+- Gaussian self-conjugacy
+- Generative classifiers with Gaussian assumption
+- Categorical mixture model with expectation maximization
+- Semi-supervised Gaussian discriminant analysis
