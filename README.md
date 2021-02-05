@@ -1,4 +1,4 @@
-# CPSC440/540: Advanced Machine Learning
+# CPSC440/540: Advanced Machine Learning (Spring 2020)
 
 ## Course Description
 This course is intended as a second or third university-level course on machine learning, a field that focuses on using automated data analysis for tasks like pattern recognition and prediction. The class is intended as a continuation of CPSC 340 (or 532M), and will assume a strong background in math and computer science. Topics will (roughly) include deep learning, generative models, latent-variable models, Markov models, probabilistic graphical models, and Bayesian methods.
