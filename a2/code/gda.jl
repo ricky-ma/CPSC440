@@ -1,4 +1,4 @@
-using Statistics, LinearAlgebra
+using Statistics
 
 function gda(X, y)
     # Filter and density estimation to get mu and Sigma for each class
@@ -16,30 +16,31 @@ function gda(X, y)
         mu = mean(Xc, dims=1)
         mus = [mus; mu]
         # calculate Sigma for this class
-        Nc = length(Xc)
-        # Sigma = sum((Xc .- mu)*(Xc .- mu)') ./ Nc
+        # Sigma = sum((Xc .- mu)*(Xc .- mu)') ./ length(Xc)
         Sigma = cov(Xc)
         Sigmas = push!(Sigmas, Sigma)
     end
+
+    function calculate_pdf(mu, Sigma, pic, xi)
+        log_variance = log(Sigma)
+        deter = -0.5 * logdet(inv(Sigma))
+        expon = -0.5 * ((xi' .- mu)*inv(Sigma)*(xi' .- mu)')
+        p = log(pic) .+ expon .+ deter
+        return p[1][1]
+    end
+
     function predict(Xhat)
         yhat = Vector{Int32}()
         for xi in eachrow(Xhat)
             probabilities = Vector{Float64}()
             for c in 1:length(labels)
-                mu = mus[c]
-                Sigma = Sigmas[c]
-                pic = pis[c]
-                log_variance = log(Sigma)
-                deter = -0.5 * logdet(inv(Sigma))
-                expon = -0.5 * ((xi' .- mu)*inv(Sigma)*(xi' .- mu)')
-                p = log(pic) .+ expon .+ deter
-                # println(p[1][1])
-                append!(probabilities, p[1][1])
+                p = calculate_pdf(mus[c], Sigmas[c], pis[c], xi)
+                append!(probabilities, p)
             end
+            # Use PDF and responsibility to get categorical distribution
             yi = findmax(probabilities)[2]
             append!(yhat, yi)
         end
-        # Use PDF and responsibility to get categorical distribution
         return yhat
     end
     return GenericModel(predict)
