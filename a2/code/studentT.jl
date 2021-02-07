@@ -3,9 +3,7 @@ include("findMin.jl")
 using SpecialFunctions
 
 function studentT(X)
-
     (n,d) = size(X)
-
     # Initialize parameters
     mu = zeros(d)
     Sigma = Matrix(Diagonal(ones(d)))
@@ -19,16 +17,12 @@ function studentT(X)
     while norm(mu-mu_old,Inf) > .1
     #for i in 1:5
         mu_old = mu
-
         # Update mean
         mu = findMin(funObj_mu,mu,verbose=false)
-
         # Update covariance
         Sigma[:] = findMin(funObj_Sigma,Sigma[:],verbose=false)
-
         # Update degrees of freedom
         dof = findMin(funObj_dof,dof,verbose=false)
-
     end
 
     # Compute square root of log-determinant
@@ -39,10 +33,9 @@ function studentT(X)
     dof = dof[1] # Take scalar out of containiner
     logZ = logabsgamma((dof+d)/2)[1] - (d/2)*log(pi) - logStd - logabsgamma(dof/2)[1] - (d/2)*log(dof)
 
-    function PDF(Xhat)
+    function pdf(Xhat)
         (t,d) = size(Xhat)
         PDFs = zeros(t)
-
         for i in 1:t
             xCentered = Xhat[i,:] - mu
             tmp = 1 + (1/dof)*dot(xCentered,SigmaInv*xCentered)
@@ -51,15 +44,12 @@ function studentT(X)
         end
         return PDFs
     end
-
-    return DensityModel(PDF)
-
+    return DensityModel(pdf)
 end
 
 
 function NLL(X,mu,Sigma,dof,deriv)
     (n,d) = size(X)
-
     # Initialize nll and gradient
     nll = 0
     if deriv == 1
@@ -69,15 +59,12 @@ function NLL(X,mu,Sigma,dof,deriv)
     else
         g = zeros(1,1)
     end
-
     # Possibly re-shape and symmeetrize sigma
     if size(Sigma,1) != d
         Sigma = reshape(Sigma,d,d)
     end
     Sigma = (Sigma+Sigma')/2
-
     dof = dof[1]
-
     if dof < 0
         return (Inf,g[:])
     end
@@ -107,7 +94,6 @@ function NLL(X,mu,Sigma,dof,deriv)
             g[1] -= (dof/(2*tmp*dof^2))*dot(xCentered,SigmaInv*xCentered)
             g[1] += (1/2)*log(tmp)
         end
-
     end
 
     # Now take into account normalizing constant
@@ -122,4 +108,33 @@ function NLL(X,mu,Sigma,dof,deriv)
         g[1] += - (n/2)*polygamma(0,(dof+d)/2) + (n/2)*polygamma(0,dof/2) + n*(d/(2*dof))
     end
     return (nll,g)
+end
+
+function tda(X, y, k)
+    X_with_labels = [y X]
+    subModels = Array{DensityModel}(undef,k)
+    for c in 1:k
+        # filter data by class label, remove label column, and center
+        Xc = X_with_labels[X_with_labels[:,1] .== c, :][:, 1:end .!= 1]
+        # create and store density model for this specific class
+        subModels[c] = studentT(Xc)
+    end
+
+    function predict(Xhat)
+        n,d = size(Xhat)
+        # calculate pdfs for each class
+        probabilties = Array{Float64}(undef,n,k)
+        for c in 1:k
+            pdfs = subModels[c].pdf(Xhat)
+            probabilties[:,c] = pdfs
+        end
+        # for each xi, yi = index of largest pdf
+        yhat = Array{Int32}(undef,n)
+        for (i,row) in enumerate(eachrow(probabilties))
+            val, yi = findmax(row)
+            yhat[i] = yi
+        end
+        return yhat
+    end
+    return GenericModel(predict)
 end
