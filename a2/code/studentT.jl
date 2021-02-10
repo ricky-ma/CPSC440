@@ -113,9 +113,12 @@ end
 function tda(X, y, k)
     X_with_labels = [y X]
     subModels = Array{DensityModel}(undef,k)
+    priors = Array{Float64}(undef,k)
     for c in 1:k
         # filter data by class label, remove label column, and center
         Xc = X_with_labels[X_with_labels[:,1] .== c, :][:, 1:end .!= 1]
+        # prior probability pi_c
+        priors[c] = length(Xc)/length(X)
         # create and store density model for this specific class
         subModels[c] = studentT(Xc)
     end
@@ -126,7 +129,7 @@ function tda(X, y, k)
         probabilties = Array{Float64}(undef,n,k)
         for c in 1:k
             pdfs = subModels[c].pdf(Xhat)
-            probabilties[:,c] = pdfs
+            probabilties[:,c] = pdfs .* priors[c]
         end
         # for each xi, yi = index of largest pdf
         yhat = Array{Int32}(undef,n)
