@@ -20,5 +20,5 @@ This course is intended as a second or third university-level course on machine 
 - MLE and MAP estimation for general discrete distribution
 - Gaussian self-conjugacy
 - Generative classifiers with Gaussian assumption
-- Categorical mixture model with expectation maximization
+- Expectation maximization for categorical mixture models
 - Semi-supervised Gaussian discriminant analysis
