@@ -1,33 +1,26 @@
-using Statistics
+using Statistics, LinearAlgebra
 
-function gda(X, y)
+function gda(X,y)
     # Filter and density estimation to get mu and Sigma for each class
     k = length(unique(y))
     d = size(X)[2]
-    X_with_labels = [y X]
     mus = Array{Float64}(undef,k,d)
     Sigmas = Array{Float64}(undef,k,d,d)
-    pis = Array{Float64}(undef,k)
+    thetas = Array{Float64}(undef,k)
     globalMu = mean(X, dims=1)
     for c in 1:k
-        # filter data by class label, remove label column, and center
-        Xc = X_with_labels[X_with_labels[:,1] .== c, :]
-        Xc = Xc[:, 1:end .!= 1] .- globalMu
-        pis[c] = length(Xc)/length(X)
-        # mean vector containing mean of each feature, by label
-        mu = mean(Xc, dims=1)
-        mus[c,:] = mu
-        # calculate Sigma for this class
-        # println(dot((Xc[c,:]' - mu),(Xc[c,:]' - mu)'))
-        # Sigma = (Xc[:,c] - mu)*(Xc[:,c] - mu)' ./ length(Xc)
-        # println(size(Sigma))
+        # filter data by class label and center
+        Xc = X[y.==c,:] .- globalMu
+        # calculate parameters: prior theta, mean mu, covariance sigma
+        thetas[c] = length(Xc)/length(X)
+        mus[c,:] = mean(Xc, dims=1)
         Sigmas[c,:,:] = cov(Xc)
     end
 
-    function PDF(mu, Sigma, pic, xi)
+    function PDF(mu, Sigma, theta, xi)
         deter = -0.5 * logdet(Sigma)
         expon = -0.5 * ((xi - mu)'*inv(Sigma)*(xi - mu))
-        p = log(pic) .+ expon .+ deter
+        p = log(theta) .+ expon .+ deter
         return p[1][1]
     end
 
@@ -37,7 +30,7 @@ function gda(X, y)
         for xi in eachrow(Xhat)
             probabilities = Vector{Float64}()
             for c in 1:k
-                p = PDF(mus[c,:], Sigmas[c,:,:], pis[c], xi - xhatMu')
+                p = PDF(mus[c,:], Sigmas[c,:,:], thetas[c], xi - xhatMu')
                 append!(probabilities, p)
             end
             # Use PDF and responsibility to get categorical distribution
@@ -47,4 +40,12 @@ function gda(X, y)
         return yhat
     end
     return GenericModel(predict)
+end
+
+function gdaSSL(X,y)
+    gdaModel = gda(X,y)
+    mus = gdaModel.mus
+    Sigmas = gdaModel.Sigmas
+    thetas = gdaModel.thetas
+    println("hello")
 end
