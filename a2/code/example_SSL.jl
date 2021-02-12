@@ -33,3 +33,14 @@ yhat = model.predict(Xtest)
 testError = mean(yhat .!= ytest)
 @printf("Test Error with GDA: %.3f\n",testError)
 
+model = gdaSSL(X,y,Xtest)
+
+# Evaluate training error
+yhat = model.predict(X)
+trainError = mean(yhat .!= y)
+@printf("Train Error with semi-supervised GDA: %.3f\n",trainError)
+
+# Evaluate test error
+yhat = model.predict(Xtest)
+testError = mean(yhat .!= ytest)
+@printf("Test Error with semi-supervised GDA: %.3f\n",testError)
