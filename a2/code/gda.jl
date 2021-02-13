@@ -60,66 +60,64 @@ function responsibilities(X,pis,mus,Sigmas,t,k)
     return r
 end
 
+# E-step: expectation of complete log-likelihood given last parameters Theta^t
 function Qfunction(X,y,Xtest,pis,mus,Sigmas,r,n,t,k)
     q = 0
     for i in 1:n
-        c = y[i]
-        q += logPDF(X[i,:],pis[c],mus[c,:],Sigmas[c,:,:])
+        q += logPDF(X[i,:],pis[y[i]],mus[y[i],:],Sigmas[y[i],:,:])
     end
     for i in 1:t
         for c in 1:k
-            q += r[i,c] + logPDF(Xtest[i,:],pis[c],mus[c,:],Sigmas[c,:,:])
+            q += r[i,c] * logPDF(Xtest[i,:],pis[c],mus[c,:],Sigmas[c,:,:])
         end
     end
     return q
 end
 
-function gdaSSL(X,y,Xtest;maxIters=100,epsilon=1e-4)
+# M-step: update parameters Theta^t+1 given last parameters Theta^t
+function emUpdate(X,y,Xtest,pis,mus,Sigmas,r,n,t,k,ncs)
+    for c in 1:k
+        Xc = X[y.==c,:]
+        pis[c] = (ncs[c] + sum(r[:,c])) / n+t
+        muSums = sum(Xc, dims=1) + sum(r[:,c].*Xtest, dims=1)
+        mus[c,:] = muSums ./ (ncs[c] + sum(r[:,c]))
+        varSums = (Xc' .- mus[c,:]) * (Xc' .- mus[c,:])'
+        varSums += r[:,c]' .* (Xtest' .- mus[c,:]) * (Xtest' .- mus[c,:])'
+        Sigmas[c,:,:] = varSums ./ (ncs[c] + sum(r[:,c]))
+    end
+    return pis,mus,Sigmas
+end
+
+function gdaSSL(X,y,Xtest;maxIters=50,epsilon=1e-5)
     k = length(unique(y))
     n,d = size(X)
     t,_ = size(Xtest)
     mus = Array{Float64}(undef,k,d)
     Sigmas = Array{Float64}(undef,k,d,d)
-    pis = Array{Float64}(undef,k)
+    pis = ones(k)./k
     ncs = counts(y,k)
-    # Center data
+    # Center data and initialize mus and Sigmas
     X = X .- mean(X,dims=1)
     Xtest = Xtest .- mean(Xtest,dims=1)
-
-    # for each class c:
-    # calculate parameters: prior theta, mean mu, covariance sigma
     for c in 1:k
-        Xc = X[y.==c,:]
-        pis[c] = size(Xc)[1]/n
-        mus[c,:] = mean(Xc, dims=1)
-        Sigmas[c,:,:] = cov(Xc)
+        mus[c,:] = mean(X, dims=1)
+        Sigmas[c,:,:] = cov(X)
     end
-
-    Q = 0
+    # Expectation maximization
+    Q = -Inf
     Qs = Array{Float64}(undef,maxIters)
     for iter in ProgressBar(1:maxIters)
         r = responsibilities(Xtest,pis,mus,Sigmas,t,k)
-        for c in 1:k
-            Xc = X[y.==c,:]
-            # parameter updates
-            pis[c] = (ncs[c] + sum(r[:,c])) / n+t
-            muSums = sum(X[y.==c,:], dims=1) + sum(r[:,c].*Xtest, dims=1)
-            mus[c,:] = muSums ./ (ncs[c] + sum(r[:,c]))
-            varSums = (Xc' .- mus[c,:]) * (Xc' .- mus[c,:])'
-            varSums += r[:,c]' .* (Xtest' .- mus[c,:]) * (Xtest' .- mus[c,:])'
-            Sigmas[c,:,:] = varSums ./ (ncs[c] + sum(r[:,c]))
-        end
-
-        Qt = Qfunction(X,y,Xtest,pis,mus,Sigmas,r,n,t,k)
+        Qt = Qfunction(X,y,Xtest,pis,mus,Sigmas,r,n,t,k) # E-step
+        pis,mus,Sigmas = emUpdate(X,y,Xtest,pis,mus,Sigmas,r,n,t,k,ncs) # M-step
         Qs[iter] = Qt
-        # if Qt - Q <= epsilon
-        #     println(Qt-Q)
-        #     break
-        # end
+        if Qt - Q <= epsilon
+            println("Iterations: $iter\nQt-Q=$(Qt-Q)")
+            break
+        end
         Q = Qt
     end
     display(plot((1:maxIters),Qs))
-    # Prediction on Xhat
     predict(Xhat) = gdaPredict(Xhat,k,mus,Sigmas,pis)
     return GenericModel(predict)
 end
