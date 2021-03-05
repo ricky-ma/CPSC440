@@ -22,3 +22,8 @@ This course is intended as a second or third university-level course on machine 
 - Generative classifiers with Gaussian assumption
 - Expectation maximization for categorical mixture models
 - Semi-supervised Gaussian discriminant analysis
+
+### A3
+- Inference in discrete and continuous state Markov chains
+- Learning with discrete Markov chains
+- D-separation, exact inference, and learning in DAGs
