@@ -23,7 +23,7 @@ function sampleAncestral(p1,pt,d,numSamples)
 end
 
 
-function sampleRejection(p1,pt,numSamples,queryTime,endTime,endState)
+function sampleRejection(p1,pt,numSamples,queryTime,condTime,endState)
     # Monte Carlo estimation via rejection sampling:
     # estimate frequency of first event in samples consistent with second event
     frequencies = [0,0,0,0,0,0,0]
@@ -35,7 +35,7 @@ function sampleRejection(p1,pt,numSamples,queryTime,endTime,endState)
         acceptState = 0
         # sample ancestrally until endTime
         stateDist = p1
-        for t in 1:endTime
+        for t in 1:max(queryTime,condTime)
             state = sampleDiscrete(stateDist)
             stateDist = pt[state,:]
             # if t=queryTime, keep track of state
@@ -43,7 +43,7 @@ function sampleRejection(p1,pt,numSamples,queryTime,endTime,endState)
                 acceptState = state
             end
             # if t=endTime and we are at desired endState, accept sample
-            if t == endTime && state == endState
+            if t == condTime && state == endState
                 accept = true
                 acceptedSamples += 1
             end
@@ -53,7 +53,7 @@ function sampleRejection(p1,pt,numSamples,queryTime,endTime,endState)
         end
     end
     conditionalProbabilities = frequencies ./ acceptedSamples
-    return conditionalProbabilities
+    return conditionalProbabilities, acceptedSamples
 end
 
 

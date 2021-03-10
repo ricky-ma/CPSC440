@@ -40,5 +40,7 @@ println(round.(exact, digits=3))
 println()
 
 println("p(x5=c|x10=6):")
-estimate = sampleRejection(p1,pt,10000,5,10,6)
+estimate, acceptedSamples = sampleRejection(p1,pt,10000,5,10,6)
 println(round.(estimate, digits=3))
+println("Number of accepted samples:")
+println(acceptedSamples)
