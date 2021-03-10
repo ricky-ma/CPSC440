@@ -74,7 +74,7 @@ end
 
 ### For vector p giving discrete probabilities, generates a random sample
 function sampleDiscrete(p)
-	findfirst(cumsum(p[:]).> rand())
+	return findfirst(cumsum(p[:]).> rand())
 end
 
 # The code below defines an iterator that goes through all possible states
@@ -96,4 +96,3 @@ function Base.iterate(S::DiscreteStates, state=Int64(0))
 	end
 	return (y,state+1)
 end
-
