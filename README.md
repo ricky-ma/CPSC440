@@ -24,6 +24,9 @@ This course is intended as a second or third university-level course on machine 
 - Semi-supervised Gaussian discriminant analysis
 
 ### A3
-- Inference in discrete and continuous state Markov chains
-- Learning with discrete Markov chains
-- D-separation, exact inference, and learning in DAGs
+- Approximate and exact inference in discrete Markov chains
+- Viterbi decoding algorithm for Markov chains
+- Inference in continuous-state Markov chains
+- Learning with homogeneous Markov chains
+- D-separation and exact inference in DAGs
+- Learning and sample generation with DAGs
