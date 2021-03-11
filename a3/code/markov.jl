@@ -23,7 +23,7 @@ function sampleAncestral(p1,pt,d,numSamples)
 end
 
 
-function sampleRejection(p1,pt,numSamples,queryTime,condTime,endState)
+function sampleRejection(p1,pt,numSamples,queryTime,condTime,condState)
     # Monte Carlo estimation via rejection sampling:
     # estimate frequency of first event in samples consistent with second event
     frequencies = [0,0,0,0,0,0,0]
@@ -43,7 +43,7 @@ function sampleRejection(p1,pt,numSamples,queryTime,condTime,endState)
                 acceptState = state
             end
             # if t=endTime and we are at desired endState, accept sample
-            if t == condTime && state == endState
+            if t == condTime && state == condState
                 accept = true
                 acceptedSamples += 1
             end
@@ -71,31 +71,42 @@ function marginalCK(p1,pt,d)
 end
 
 
+function conditionalCK(p1,pt,queryTime,condTime,condState)
+    # get marginal probabilities up to query time and conditional time
+    pQuery, _ = marginalCK(p1,pt,queryTime)
+    pCond, _ = marginalCK(p1,pt,condTime)
+    k = length(p1)
+    # DP: iteratively find conditional probabilities given marginals
+    condProbs = zeros(k)
+    for j in 1:k
+        currState = zeros(k)
+        currState[j] = 1
+        pd, _ = marginalCK(currState,pt,condTime)
+        condProbs[j] = (pd[condState] * pQuery[j]) / pCond[condState]
+    end
+    return condProbs
+end
+
+
 function viterbiDecode(p1,pt,d)
     k = length(p1)
-    indices = Array{Int32}(undef,d,k)
-    optimalDecoding = Array{Int32}(undef,d-1)
-
+    M = zeros(2,d,k)
+    optimalDecoding = Array{Int32}(undef,d)
     # forward pass: store probabilities for each timestep
-    bestCase = p1
+    # initilize first best-case as p1
+    M[1,1,:] = p1
     for t in 2:d
-        # enumerate all possible transitions
-        possibleTransitions = bestCase' .* pt
-        # choose max for each state and store in bestCase
-        bestCase,inds = findmax(possibleTransitions; dims=2)
-
-        # TODO: fix indexing so that backtracking works correctly
-        # save argmax indices to indices
-        indices[t-1,:] = [i[2] for i in inds]
+        # for each state, enumerate all possible transitions
+        for j in 1:k
+            possibleTransitions = M[1,t-1,:] .* pt[:,j]
+            # find max for each transition and store in M
+            M[:,t,j] .= findmax(possibleTransitions)
+        end
     end
-
     # backtracking: find most likely sequence from the end
-    _, highestP = findmax(bestCase)
-    highestP = highestP[1]
-    for t=reverse(1:d-1)
-        optimalDecoding[t] = highestP
-        highestP = indices[t,highestP]
+    optimalDecoding[d] = findmax(M[1,d,:])[2]
+    for t=reverse(2:d)
+        optimalDecoding[t-1] = M[2,t,optimalDecoding[t]]
     end
-    println(optimalDecoding)
     return optimalDecoding
 end
