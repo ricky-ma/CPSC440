@@ -27,7 +27,7 @@ end
 function sampleRejection(p1,pt,numSamples,queryTime,condTime,condState)
     # Monte Carlo estimation via rejection sampling:
     # estimate frequency of first event in samples consistent with second event
-    frequencies = [0,0,0,0,0,0,0]
+    frequencies = zeros(length(p1))
     acceptedSamples = 0
     # generate samples for Monte Carlo estimation
     for s in 1:numSamples
@@ -78,7 +78,7 @@ function conditionalCK(p1,pt,queryTime,condTime,condState)
     pCond, _ = marginalCK(p1,pt,condTime)
     k = length(p1)
     # DP: iteratively find conditional probabilities given marginals
-    condProbs = zeros(k)
+    condProbs = Array{Flaot64}(undef,k)
     for j in 1:k
         currState = zeros(k)
         currState[j] = 1
@@ -114,27 +114,31 @@ end
 
 
 function homogeneousMarkovMLEs(Xtrain)
-    p = proportions(Xtrain[:,1])
-    numStates = length(unique(Xtrain[:,1]))
-    theta = Array{Float64}(undef,numStates,numStates)
+    n,d = size(Xtrain)
+    states = unique(Xtrain[:,1])
+    k = length(states)
 
-    # shift data by 1 for 1-day time-series analysis
+    # shift data by 1 for 1-step time-series analysis
     Xcurr = Xtrain[:,1:d-1]
     Xnext = Xtrain[:,2:d]
-    # total number of sunny and rainy days
-    numSunny = count(Xcurr .== 0)
-    numRainy = count(Xcurr .== 1)
 
-    # p(xt+1=sunny|xt=sunny)
-    theta[1,1] = count(Xnext[Xcurr .== 0] .== 0) / numSunny
-    # p(xt+1=rainy|xt=sunny)
-    theta[1,2] = count(Xnext[Xcurr .== 0] .== 1) / numSunny
-    # p(xt+1=sunny|xt=rainy)
-    theta[2,1] = count(Xnext[Xcurr .== 1] .== 0) / numRainy
-    # p(xt+1=rainy|xt=rainy)
-    theta[2,2] = count(Xnext[Xcurr .== 1] .== 1) / numRainy
+    # theta_ij = sum(I(xt+1=i|xt=j)) / sum(I(xt=i))
+    theta = Array{Float64}(undef,k,k)
+    for i in 1:k
+        numCurr = count(Xcurr .== i-1)
+        for j in 1:k
+            theta[i,j] = count(Xnext[Xcurr .== i-1] .== j-1) / numCurr
+        end
+    end
+
+    # p_c = sum(I(xc=c)) / n
+    p = Array{Float64}(undef,k)
+    for c in 1:k
+        p[c] = count(Xtrain[:,1] .== states[c]) / n
+    end
     return p, theta
 end
+
 
 function homogeneousMarkovNLL(Xvalid,p,theta)
     n,d = size(Xvalid)
@@ -143,7 +147,7 @@ function homogeneousMarkovNLL(Xvalid,p,theta)
     # l = sum_j^d log(p(Xi|Xi-1)) = log(p(Xi=xi)) + sum_ij(theta_ij)
     # NLL = -log(p(Xi=xi)) - sum_ij(theta_ij)
     for i in 1:n
-        # +1 to adjust for 1-based indexing
+        # +1 to adjust for 0-based state indexing
         NLL -= log(p[Xvalid[i,1] + 1])
         for j in 2:d
             currState = Xvalid[i,j] + 1
