@@ -117,11 +117,9 @@ function homogeneousMarkovMLEs(Xtrain)
     n,d = size(Xtrain)
     states = unique(Xtrain[:,1])
     k = length(states)
-
     # shift data by 1 for 1-step time-series analysis
     Xcurr = Xtrain[:,1:d-1]
     Xnext = Xtrain[:,2:d]
-
     # theta_ij = sum(I(xt+1=i|xt=j)) / sum(I(xt=i))
     theta = Array{Float64}(undef,k,k)
     for i in 1:k
@@ -130,7 +128,6 @@ function homogeneousMarkovMLEs(Xtrain)
             theta[i,j] = count(Xnext[Xcurr .== i-1] .== j-1) / numCurr
         end
     end
-
     # p_c = sum(I(xc=c)) / n
     p = Array{Float64}(undef,k)
     for c in 1:k
