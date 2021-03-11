@@ -1,9 +1,9 @@
-# Load X and y variable
 using JLD
+include("markov.jl")
 
 # Load initial probabilities and transition probabilities of Markov chain
-data = load("rain.jld")
-X = data["X"]
+data = load("../data/rain.jld")
+X = round.(Int64,data["X"])
 (n,d) = size(X)
 
 # Split into a training and validation set
@@ -30,3 +30,10 @@ for i in 1:nValid
     end
 end
 @show NLL
+println()
+
+p,theta = homogeneousMarkovMLEs(Xtrain)
+NLL = homogeneousMarkovNLL(Xvalid,p,theta)
+println("pi:",round.(p, digits=3))
+println("theta:",round.(theta, digits=3))
+println("NLL:",NLL)

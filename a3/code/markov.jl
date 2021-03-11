@@ -1,3 +1,4 @@
+using StatsBase
 include("misc.jl")
 
 function sampleAncestral(p1,pt,d,numSamples)
@@ -109,4 +110,46 @@ function viterbiDecode(p1,pt,d)
         optimalDecoding[t-1] = M[2,t,optimalDecoding[t]]
     end
     return optimalDecoding
+end
+
+
+function homogeneousMarkovMLEs(Xtrain)
+    p = proportions(Xtrain[:,1])
+    numStates = length(unique(Xtrain[:,1]))
+    theta = Array{Float64}(undef,numStates,numStates)
+
+    # shift data by 1 for 1-day time-series analysis
+    Xcurr = Xtrain[:,1:d-1]
+    Xnext = Xtrain[:,2:d]
+    # total number of sunny and rainy days
+    numSunny = count(Xcurr .== 0)
+    numRainy = count(Xcurr .== 1)
+
+    # p(xt+1=sunny|xt=sunny)
+    theta[1,1] = count(Xnext[Xcurr .== 0] .== 0) / numSunny
+    # p(xt+1=rainy|xt=sunny)
+    theta[1,2] = count(Xnext[Xcurr .== 0] .== 1) / numSunny
+    # p(xt+1=sunny|xt=rainy)
+    theta[2,1] = count(Xnext[Xcurr .== 1] .== 0) / numRainy
+    # p(xt+1=rainy|xt=rainy)
+    theta[2,2] = count(Xnext[Xcurr .== 1] .== 1) / numRainy
+    return p, theta
+end
+
+function homogeneousMarkovNLL(Xvalid,p,theta)
+    n,d = size(Xvalid)
+    NLL = 0
+    # get log-likelihood (l) at each timestep for each sample
+    # l = sum_j^d log(p(Xi|Xi-1)) = log(p(Xi=xi)) + sum_ij(theta_ij)
+    # NLL = -log(p(Xi=xi)) - sum_ij(theta_ij)
+    for i in 1:n
+        # +1 to adjust for 1-based indexing
+        NLL -= log(p[Xvalid[i,1] + 1])
+        for j in 2:d
+            currState = Xvalid[i,j] + 1
+            prevState = Xvalid[i,j-1] + 1
+            NLL -= log(theta[prevState,currState])
+        end
+    end
+    return NLL
 end
