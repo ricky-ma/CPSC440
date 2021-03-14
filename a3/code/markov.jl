@@ -78,11 +78,11 @@ function conditionalCK(p1,pt,queryTime,condTime,condState)
     pCond, _ = marginalCK(p1,pt,condTime)
     k = length(p1)
     # DP: iteratively find conditional probabilities given marginals
-    condProbs = Array{Flaot64}(undef,k)
+    condProbs = Array{Float64}(undef,k)
     for j in 1:k
         currState = zeros(k)
         currState[j] = 1
-        pd, _ = marginalCK(currState,pt,condTime)
+        pd, _ = marginalCK(currState,pt,condTime-queryTime+1)
         condProbs[j] = (pd[condState] * pQuery[j]) / pCond[condState]
     end
     return condProbs
