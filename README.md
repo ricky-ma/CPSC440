@@ -30,3 +30,11 @@ This course is intended as a second or third university-level course on machine 
 - Learning with homogeneous Markov chains
 - D-separation and exact inference in DAGs
 - Learning and sample generation with DAGs
+
+### A4
+- Inference in undirected graphical models
+- Conditional undirected graphical models
+- Lattice-structured conditional UGM
+- Conjugate priors
+- Empirical Bayes
+- Metropolis-coupled Markov chain Monte Carlo
