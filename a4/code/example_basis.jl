@@ -1,6 +1,6 @@
 # Load X and y variable
 using JLD
-data = load("basisData.jld")
+data = load("..\\data\\basisData.jld")
 (X,y,Xtest,ytest) = (data["X"],data["y"],data["Xtest"],data["ytest"])
 
 # Compute number of training examples and number of features
@@ -8,14 +8,20 @@ data = load("basisData.jld")
 
 # Fit least squares model
 include("leastSquares.jl")
-model = leastSquaresBasis(X,y,2)
+model = leastSquaresBasis(X,y,3)
 
 # Report the error on the test set
 using Printf
 t = size(Xtest,1)
 yhat = model.predict(Xtest)
 testError = sum((yhat - ytest).^2)/t
-@printf("TestError = %.2f\n",testError)
+@printf("TestError w/ degree-3 polynomial = %.2f\n",testError)
+
+model = leastSquaresEmpiricalBasis(X,y)
+t = size(Xtest,1)
+yhat = model.predict(Xtest)
+testError = sum((yhat - ytest).^2)/t
+@printf("TestError optimized with marginal likelihood = %.2f\n",testError)
 
 # Plot model
 using PyPlot
