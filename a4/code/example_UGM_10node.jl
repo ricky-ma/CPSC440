@@ -63,3 +63,8 @@ x = decode(phi1,phi2,E,8,1)
 pTilde = unnormalizedProb(x,phi1,phi2,E)
 println("Optimal decoding given student 8 gets question right: ",x)
 @printf("Probability of optimal decoding: %f\n",pTilde/Z)
+
+# Approximate optimal decoding using ICM
+xstar,iters = icm(phi1,phi2,E)
+println("Optimal decoding w/ ICM: ",xstar)
+println("Number of iterations: ",iters)

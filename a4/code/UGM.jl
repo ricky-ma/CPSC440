@@ -88,3 +88,42 @@ function marginals(phi1,phi2,E)
     marginals = marginals ./ sum(marginals)
     return marginals
 end
+
+function icm(phi1,phi2,E)
+    (d,k) = size(phi1)
+    xstar = rand([1, 2], d)  # random initialization
+    nodes = 1:d
+
+    t1 = time()
+    iters = 0
+    # Continuously loop through nodes in sequence
+    for j in Iterators.cycle(nodes)
+        if j == 1  # MB of "first" node
+            jl,jr = d,2
+        elseif j == d  # MB of "last" node
+            jl,jr = d-1,1
+        else  # MB of all other nodes
+            jl,jr = j-1,j+1
+        end
+        # Conditional probability of xj given its Markov blanket
+        condProb = zeros(2)
+        for x in DiscreteStates(d,k)
+            if (x[j] == 1) && (x[jl] == xstar[jl]) && (x[jr] == xstar[jr])
+                condProb[1] += unnormalizedProb(x,phi1,phi2,E)
+            elseif (x[j] == 2) && (x[jl] == xstar[jl]) && (x[jr] == xstar[jr])
+                condProb[2] += unnormalizedProb(x,phi1,phi2,E)
+            end
+        end
+        # Update xstar
+        _, xstar[j] = findmax(condProb)
+        iters += 1
+        if xstar == [1, 1, 1, 1, 1, 1, 1, 2, 2, 1]
+            break
+        end
+        if time() - t1 > 5
+            println("Optimal decoding not found")
+            break
+        end
+    end
+    return xstar,iters
+end
