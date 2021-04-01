@@ -45,3 +45,21 @@ x = [2 2 2 2 2 2 2 2 2 2]
 pTilde = unnormalizedProb(x,phi1,phi2,E)
 @printf("Probability of all-wrong: %f\n",pTilde/Z)
 
+# Find optimal decoding and compute probability
+x = decode(phi1,phi2,E,0,0)
+pTilde = unnormalizedProb(x,phi1,phi2,E)
+println("Optimal decoding: ",x)
+@printf("Probability of optimal decoding: %f\n",pTilde/Z)
+
+px = marginals(phi1,phi2,E)
+println("Marginal probabilities of each state: ",round.(px, digits=3))
+
+x = decode(phi1,phi2,E,5,2)
+pTilde = unnormalizedProb(x,phi1,phi2,E)
+println("Optimal decoding given student 5 gets question wrong: ",x)
+@printf("Probability of optimal decoding: %f\n",pTilde/Z)
+
+x = decode(phi1,phi2,E,8,1)
+pTilde = unnormalizedProb(x,phi1,phi2,E)
+println("Optimal decoding given student 8 gets question right: ",x)
+@printf("Probability of optimal decoding: %f\n",pTilde/Z)

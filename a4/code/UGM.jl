@@ -50,3 +50,41 @@ function computeZ(phi1,phi2,E)
 
     return Z
 end
+
+function decode(phi1,phi2,E,n,s)
+    (d,k) = size(phi1)
+    optimalDecoding = ones(d)
+    bestP = 0
+    for x in DiscreteStates(d,k)
+        # Calculate optimal decoding
+        if n == s == 0
+            pTilde = unnormalizedProb(x,phi1,phi2,E)
+            if pTilde > bestP
+                bestP = pTilde
+                optimalDecoding = x
+            end
+        # Calculate optimal decoding conditioned on node n being in state s
+        elseif x[n] == s
+            pTilde = unnormalizedProb(x,phi1,phi2,E)
+            if pTilde > bestP
+                bestP = pTilde
+                optimalDecoding = x
+            end
+        end
+    end
+    return optimalDecoding
+end
+
+function marginals(phi1,phi2,E)
+    (d,k) = size(phi1)
+    marginals = zeros(d)
+    for x in DiscreteStates(d,k)
+        for (idx, s) in enumerate(x)
+            if s == 1
+                marginals[idx] += unnormalizedProb(x,phi1,phi2,E)
+            end
+        end
+    end
+    marginals = marginals ./ sum(marginals)
+    return marginals
+end
