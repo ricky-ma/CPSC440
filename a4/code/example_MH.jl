@@ -1,11 +1,12 @@
 # Load X and y variable
 using JLD, PyPlot
-data = load("twoThrees.jld")
+clf()
+data = load("..\\data\\twoThrees.jld")
 (X,y) = (data["X"],data["y"])
 
 include("blogreg.jl")
-nSamples = 10000
-samples = blogreg(X,y,1,nSamples)
+nSamples = 1000
+samples = blogreg(X,y,1,nSamples,1)
 
 figure(1);
 j=1;
@@ -27,3 +28,5 @@ for i in 1:6
     hist(samples[:,neu[i]]);
     title("Neutral Variables");
 end
+gcf()
+savefig("..\\figs\\metropolis1.png")

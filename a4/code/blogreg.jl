@@ -1,9 +1,7 @@
 using Printf, LinearAlgebra
 
-function blogreg(X,y,lambda,nSamples)
-
+function blogreg(X,y,lambda,nSamples,sd)
 	(n,d) = size(X);
-
 	samples = zeros(nSamples,d)
 
 	# Initialize and compute negative log-posterior (up to constant)
@@ -12,11 +10,9 @@ function blogreg(X,y,lambda,nSamples)
 
 	nAccept = 0
 	for s in 1:nSamples
-
 		# Propose candidate
-		wHat = w + randn(d,1)
+		wHat = w + (randn(d,1) / sd)
 		log_phat = logisticObj(wHat,X,y,lambda)
-
 		# Metropolis-Hastings accept/reject step (in log-domain)
 		logR = log_phat - log_p
 		if log(rand()) < logR
@@ -27,7 +23,6 @@ function blogreg(X,y,lambda,nSamples)
 		end
 		samples[s,:] = w
 	end
-
 	return samples
 end
 
