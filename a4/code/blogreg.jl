@@ -1,4 +1,4 @@
-using Printf, LinearAlgebra
+using Printf, LinearAlgebra, Distributions
 
 function blogreg(X,y,lambda,nSamples,sd)
 	(n,d) = size(X);
@@ -11,8 +11,10 @@ function blogreg(X,y,lambda,nSamples,sd)
 	nAccept = 0
 	for s in 1:nSamples
 		# Propose candidate
-		wHat = w + (randn(d,1) / sd)
+		dist = Normal(0,sd)
+		wHat = w + rand(dist,d)
 		log_phat = logisticObj(wHat,X,y,lambda)
+		
 		# Metropolis-Hastings accept/reject step (in log-domain)
 		logR = log_phat - log_p
 		if log(rand()) < logR

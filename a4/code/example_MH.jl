@@ -6,7 +6,7 @@ data = load("..\\data\\twoThrees.jld")
 
 include("blogreg.jl")
 nSamples = 1000
-samples = blogreg(X,y,1,nSamples,1)
+samples = blogreg(X,y,1,nSamples,1/10000)
 
 figure(1);
 j=1;
@@ -29,4 +29,4 @@ for i in 1:6
     title("Neutral Variables");
 end
 gcf()
-savefig("..\\figs\\metropolis1.png")
+savefig("..\\figs\\metropolis10000.png")
